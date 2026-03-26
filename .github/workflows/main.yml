@@ -1,0 +1,37 @@
+name: Build Android ARM64 .so
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: 📥 Checkout repo
+      uses: actions/checkout@v4
+
+    - name: 📦 Install Android NDK
+      run: |
+        wget https://dl.google.com/android/repository/android-ndk-r26d-linux.zip
+        unzip android-ndk-r26d-linux.zip
+        mv android-ndk-r26d $HOME/android-ndk
+
+    - name: 🔧 Set environment variables
+      run: |
+        echo "NDK_HOME=$HOME/android-ndk" >> $GITHUB_ENV
+        echo "TOOLCHAIN=$HOME/android-ndk/toolchains/llvm/prebuilt/linux-x86_64" >> $GITHUB_ENV
+
+    - name: 🏗 Build libsslbypass.so (ARM64)
+      run: |
+        $TOOLCHAIN/bin/aarch64-linux-android21-clang \
+        -shared -fPIC ssl_bypass.c \
+        -o libsslbypass.so
+
+    - name: 📤 Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: libsslbypass
+        path: libsslbypass.so
